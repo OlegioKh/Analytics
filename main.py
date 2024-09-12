@@ -8,7 +8,7 @@ app = Flask(__name__)
 
 # Налаштування Google Sheets API
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-creds = ServiceAccountCredentials.from_json_keyfile_name('E:\\api-exchange-rates-435414-daa8b542484a.json', scope)
+creds = ServiceAccountCredentials.from_json_keyfile_name('/home/Olehio1987/mysite/api-exchange-rates-435414-daa8b542484a.json', scope)
 client = gspread.authorize(creds)
 spreadsheet = client.open('Exchange Rates')
 worksheet = spreadsheet.Rates  # Вкажіть потрібний лист
