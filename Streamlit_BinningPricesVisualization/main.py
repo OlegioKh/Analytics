@@ -101,12 +101,15 @@ with col1:
 
     # Pie Chart
     pie_data = aggregated_data.groupby('Price Segment')['Дохід, грн.'].sum()
+
+    pie_data = pie_data.sort_values(ascending=False)
+
     if not pie_data.empty and (pie_data > 0).any():
-        total_sales = pie_data.sum()
-        pie_labels = [f"{segment}\n{value:,.0f} грн ({value / total_sales * 100:.1f}%)"
+        total_income = pie_data.sum()
+        pie_labels = [f"{segment}\n{value:,.0f} грн ({value / total_income * 100:.1f}%)"
                       for segment, value in pie_data.items()]  # Додано суму реалізації
 
-        fig, ax = plt.subplots(figsize=(8, 8))
+        fig, ax = plt.subplots(figsize=(6, 6))
         ax.pie(
             pie_data,
             labels=pie_labels,
