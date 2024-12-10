@@ -48,6 +48,7 @@ else:
     filtered_data = data
 
 filtered_data = filtered_data.dropna(subset=['Середня ЦР'])
+filtered_data = filtered_data[filtered_data['Дохід, грн.'] > 0]
 
 bins = pd.qcut(
     filtered_data['Середня ЦР'],
@@ -99,7 +100,7 @@ with col1:
 
     # Pie Chart
     pie_data = aggregated_data.groupby('Price Segment')['Дохід, грн.'].sum()
-    if not pie_data.empty:
+    if not pie_data.empty and (pie_data > 0).any():
         total_sales = pie_data.sum()
         pie_labels = [f"{segment}\n{value:,.0f} грн ({value / total_sales * 100:.1f}%)"
                       for segment, value in pie_data.items()]  # Додано суму реалізації
