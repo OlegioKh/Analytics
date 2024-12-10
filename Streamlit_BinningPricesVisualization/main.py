@@ -23,7 +23,7 @@ def to_excel(dataframe):
     processed_data = output.getvalue()
     return processed_data
 
-file_path = 'DB - SeaBorn.xlsx'
+file_path = 'Streamlit_BinningPricesVisualization/DB - SeaBorn.xlsx'
 data = pd.read_excel(file_path)
 
 st.sidebar.header("Filters")
