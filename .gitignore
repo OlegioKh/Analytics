@@ -1,0 +1,7 @@
+.idea/
+
+git rm -r --cached .idea/
+git commit -m "Ignore .idea files"
+git push origin main
+
+
