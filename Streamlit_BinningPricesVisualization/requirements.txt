@@ -3,8 +3,4 @@ pandas
 seaborn
 streamlit
 openpyxl
-<<<<<<< HEAD
 xlsxwriter
-=======
-xlsxwriter
->>>>>>> 55cff20210914261fda3e39fb63bcec32ee86c8d
