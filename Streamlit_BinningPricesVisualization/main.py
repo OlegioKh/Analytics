@@ -3,6 +3,7 @@ import pandas as pd
 import seaborn as sns
 import streamlit as st
 from io import BytesIO
+import os
 
 st.markdown(
     """
@@ -23,7 +24,7 @@ def to_excel(dataframe):
     processed_data = output.getvalue()
     return processed_data
 
-file_path = 'Streamlit_BinningPricesVisualization/DB - SeaBorn.xlsx'
+file_path = os.path.join(os.path.dirname(__file__), 'DB - SeaBorn.xlsx')
 data = pd.read_excel(file_path)
 
 st.sidebar.header("Filters")
