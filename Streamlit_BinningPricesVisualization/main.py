@@ -3,7 +3,6 @@ import pandas as pd
 import seaborn as sns
 import streamlit as st
 from io import BytesIO
-import os
 
 st.markdown(
     """
@@ -24,7 +23,11 @@ def to_excel(dataframe):
     processed_data = output.getvalue()
     return processed_data
 
-file_path = os.path.join(os.path.dirname(__file__), 'DB - SeaBorn.xlsx')
+@st.cache_data
+def load_data(file_path):
+    return pd.read_excel(file_path)
+
+file_path = 'DB - SeaBorn.xlsx'
 data = pd.read_excel(file_path)
 
 st.sidebar.header("Filters")
@@ -49,7 +52,6 @@ else:
     filtered_data = data
 
 filtered_data = filtered_data.dropna(subset=['Середня ЦР'])
-filtered_data = filtered_data[filtered_data['Дохід, грн.'] > 0]
 
 bins = pd.qcut(
     filtered_data['Середня ЦР'],
@@ -101,15 +103,12 @@ with col1:
 
     # Pie Chart
     pie_data = aggregated_data.groupby('Price Segment')['Дохід, грн.'].sum()
-
-    pie_data = pie_data.sort_values(ascending=False)
-
-    if not pie_data.empty and (pie_data > 0).any():
-        total_income = pie_data.sum()
-        pie_labels = [f"{segment}\n{value:,.0f} грн ({value / total_income * 100:.1f}%)"
+    if not pie_data.empty:
+        total_sales = pie_data.sum()
+        pie_labels = [f"{segment}\n{value:,.0f} грн ({value / total_sales * 100:.1f}%)"
                       for segment, value in pie_data.items()]  # Додано суму реалізації
 
-        fig, ax = plt.subplots(figsize=(6, 6))
+        fig, ax = plt.subplots(figsize=(8, 8))
         ax.pie(
             pie_data,
             labels=pie_labels,
