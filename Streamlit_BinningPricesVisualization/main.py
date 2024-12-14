@@ -3,6 +3,8 @@ import pandas as pd
 import seaborn as sns
 import streamlit as st
 from io import BytesIO
+import gdown
+
 
 st.markdown(
     """
@@ -16,6 +18,25 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+url = 'https://docs.google.com/spreadsheets/d/1Ec-ynzQwLDhLiPFDz3JQVc1tN0lSvcN3/export?format=xlsx'
+
+@st.cache_data
+def load_data(sheet_url):
+    # Завантажуємо файл напряму
+    data = pd.read_excel(sheet_url, engine='openpyxl')
+    return data
+
+# Виклик функції для завантаження даних
+data = load_data(url)
+
+st.write("**Дані з Google Sheets**:")
+sorted_data = data.sort_values(by="Реалізація, грн.", ascending=False)
+st.write(f"Кількість рядків у датасеті: {len(sorted_data)}")
+
+for col in ['Реалізація, к-сть', 'Реалізація, грн.', 'Дохід, грн.', 'Середня ЦР']:
+    data[col] = pd.to_numeric(data[col], errors='coerce')
+
+
 def to_excel(dataframe):
     output = BytesIO()
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
@@ -23,12 +44,14 @@ def to_excel(dataframe):
     processed_data = output.getvalue()
     return processed_data
 
-@st.cache_data
-def load_data(file_path):
-    return pd.read_excel(file_path)
+excel_data = to_excel(data)
 
-file_path = 'DB - SeaBorn.xlsx'
-data = pd.read_excel(file_path)
+st.download_button(
+    label="Завантажити дані в Excel",
+    data=excel_data,
+    file_name="data.xlsx",
+    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+)
 
 st.sidebar.header("Filters")
 styles = data['Стиль'].unique()
@@ -51,7 +74,10 @@ elif selected_subgroups:
 else:
     filtered_data = data
 
-filtered_data = filtered_data.dropna(subset=['Середня ЦР'])
+for col in ['Реалізація, к-сть', 'Реалізація, грн.', 'Дохід, грн.', 'Середня ЦР']:
+    filtered_data[col] = pd.to_numeric(filtered_data[col], errors='coerce')
+
+filtered_data = filtered_data.dropna(subset=['Реалізація, к-сть', 'Реалізація, грн.', 'Дохід, грн.', 'Середня ЦР'])
 
 bins = pd.qcut(
     filtered_data['Середня ЦР'],
@@ -96,13 +122,14 @@ with col1:
         ax.bar_label(container, fmt='%d', label_type='edge', fontsize=14)
     plt.xticks(rotation=45, fontsize=14)
     plt.yticks(fontsize=14)
-    plt.xlabel("Style", fontsize=14)
-    plt.ylabel("Sales Quantity", fontsize=14)
-    plt.title("Sales Quantity by Style and Price Segment", fontsize=18)
+    plt.xlabel("Структура", fontsize=14)
+    plt.ylabel("Реалізація кіл-сть", fontsize=14)
+    plt.title("Реалізація в кількості залежно від цінового сегменту", fontsize=18)
     st.pyplot(plt)
 
     # Pie Chart
     pie_data = aggregated_data.groupby('Price Segment')['Дохід, грн.'].sum()
+    pie_data = pie_data[pie_data > 0]
     if not pie_data.empty:
         total_sales = pie_data.sum()
         pie_labels = [f"{segment}\n{value:,.0f} грн ({value / total_sales * 100:.1f}%)"
@@ -116,7 +143,7 @@ with col1:
             startangle=140,
             colors=sns.color_palette('pastel'),
         )
-        ax.set_title("Income Distribution by Price Segment", fontsize=16)
+        ax.set_title("Дохід залежно від цінового сегменту", fontsize=16)
         st.pyplot(fig)
     else:
         st.write("No data available for pie chart.")
@@ -159,15 +186,9 @@ with col2:
             'Середня ЦР': 'Average Price'
         })
 
-        # Форматуємо колонки
         pivot_table['Sales Amount'] = pivot_table['Sales Amount'].astype(int)  # Перетворення у формат int
         pivot_table['Average Price'] = pivot_table['Average Price'].round(2)  # Округлення до 2 знаків після коми
 
-        if len(pivot_table) > 1000:  # Ліміт на 200 рядків
-            st.write("The table is too large to display. Showing the first 200 rows.")
-            pivot_table = pivot_table.head(200)
-
-        # Відображаємо таблицю в Streamlit
         st.dataframe(
             pivot_table.style
             .format({'Average Price': "{:.2f}", 'Sales Amount': "{:.0f}"})  # Формат для числових значень
