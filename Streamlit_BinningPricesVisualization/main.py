@@ -4,7 +4,6 @@ import seaborn as sns
 import streamlit as st
 from io import BytesIO
 
-
 url = 'https://docs.google.com/spreadsheets/d/1Ec-ynzQwLDhLiPFDz3JQVc1tN0lSvcN3/export?format=xlsx'
 
 @st.cache_data
