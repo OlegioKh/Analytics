@@ -3,7 +3,6 @@ import pandas as pd
 import seaborn as sns
 import streamlit as st
 from io import BytesIO
-import gdown
 
 
 st.markdown(
