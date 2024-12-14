@@ -4,10 +4,6 @@ import seaborn as sns
 import streamlit as st
 from io import BytesIO
 
-if st.button("Оновити дані"):
-    st.cache_data.clear()
-    st.experimental_rerun()
-
 
 url = 'https://docs.google.com/spreadsheets/d/1Ec-ynzQwLDhLiPFDz3JQVc1tN0lSvcN3/export?format=xlsx'
 
@@ -142,63 +138,59 @@ with col1:
 
 # Таблиця
 with col2:
-    if all(col in filtered_data.columns for col in ['Артикул - назва', 'Реалізація, к-сть', 'Середня ЦР', 'Price Segment', 'Постачальник']):
-        # Обчислюємо загальні продажі для кожного цінового сегмента
-        segment_totals = filtered_data.groupby('Price Segment', observed=False)['Реалізація, к-сть'].sum().reset_index()
-        segment_totals = segment_totals.rename(columns={'Реалізація, к-сть': 'Total Sales'})
+    required_columns = ['Артикул - назва', 'Реалізація, к-сть', 'Середня ЦР', 'Price Segment', 'Постачальник']
 
-        # Додаємо загальні продажі сегмента до основних даних
-        filtered_data = pd.merge(filtered_data, segment_totals, on='Price Segment', how='left')
-
-        # Pivot table з сортуванням
-        pivot_table = filtered_data.pivot_table(
-            index=['Price Segment', 'Постачальник', 'Артикул - назва'],
-            values=['Реалізація, к-сть', 'Реалізація, грн.', 'Середня ЦР', 'Total Sales'],
-            aggfunc={
-                'Реалізація, к-сть': 'sum',
-                'Реалізація, грн.': 'sum',
-                'Середня ЦР': 'mean',
-                'Total Sales': 'max'
-            },
-            observed=False  # Додано цей параметр
-        ).reset_index()
-
-        # Сортуємо спочатку за загальними продажами сегмента, потім за кількістю реалізації товару
-        pivot_table = pivot_table.sort_values(by=['Total Sales', 'Реалізація, к-сть'], ascending=False)
-
-        # Видаляємо колонку Total Sales з таблиці
-        pivot_table = pivot_table.drop(columns=['Total Sales'])
+    # Перевірка наявності необхідних колонок
+    if all(col in filtered_data.columns for col in required_columns):
+        # Групування даних
+        grouped_data = filtered_data.groupby(['Price Segment', 'Постачальник', 'Артикул - назва'], observed=False).agg({
+            'Реалізація, к-сть': 'sum',
+            'Реалізація, грн.': 'sum',
+            'Середня ЦР': 'mean'
+        }).reset_index()
 
         # Перейменовуємо колонки для відображення
-        pivot_table = pivot_table.rename(columns={
-            'Price Segment': 'Price Segment',
-            'Постачальник': 'Supplier',
-            'Артикул - назва': 'Item Name',
-            'Реалізація, к-сть': 'Sales Quantity',
-            'Реалізація, грн.': 'Sales Amount',
-            'Середня ЦР': 'Average Price'
+        grouped_data = grouped_data.rename(columns={
+            'Price Segment': 'Сегмент ціни',
+            'Постачальник': 'Постачальник',
+            'Артикул - назва': 'Товар',
+            'Реалізація, к-сть': 'Реалізація кіл-сть',
+            'Реалізація, грн.': 'Реалізація ЦР',
+            'Середня ЦР': 'Середня ціна'
         })
 
-        pivot_table['Sales Amount'] = pivot_table['Sales Amount'].astype(int)  # Перетворення у формат int
-        pivot_table['Average Price'] = pivot_table['Average Price'].round(2)  # Округлення до 2 знаків після коми
+        # Сортуємо дані
+        grouped_data = grouped_data.sort_values(
+            by=['Сегмент ціни', 'Реалізація ЦР', 'Товар'],  # Сортування за декількома стовпцями
+            ascending=[True, False, True]  # 'Сегмент ціни' - зростання, 'Реалізація ЦР' - спадання, 'Товар' - зростання
+        )
 
+        # Форматування даних
+        grouped_data['Реалізація ЦР'] = grouped_data['Реалізація ЦР'].astype(int)
+        grouped_data['Реалізація кіл-сть'] = grouped_data['Реалізація кіл-сть'].astype(int)
+        grouped_data['Середня ціна'] = grouped_data['Середня ціна'].round(2)
+
+        # Відображення таблиці
         st.dataframe(
-            pivot_table.style
-            .format({'Average Price': "{:.2f}", 'Sales Amount': "{:.0f}"})  # Формат для числових значень
-            .set_properties(subset=['Supplier', 'Item Name'], width="50%")
-            .set_properties(subset=['Sales Quantity', 'Sales Amount', 'Average Price'], width="25%"),
+            grouped_data.style
+            .format({
+                'Реалізація ЦР': "{:,.0f}",
+                'Реалізація кіл-сть': "{:,.0f}",
+                'Середня ціна': "{:.2f}"
+            }),
             use_container_width=True,
             height=500
         )
 
-        excel_data = to_excel(pivot_table)
+        # Генерація Excel для завантаження
+        excel_data = to_excel(grouped_data)
         st.download_button(
-            label="Download full table as Excel",
+            label="Завантажити таблицю в Excel",
             data=excel_data,
-            file_name='pivot_table.xlsx',
+            file_name='table.xlsx',
             mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
 
     else:
-        st.write("Columns 'Артикул - назва', 'Реалізація, к-сть', 'Середня ЦР', 'Price Segment', or 'Постачальник' are missing in the dataset.")
+        st.error("Відсутні необхідні колонки для побудови таблиці.")
 
