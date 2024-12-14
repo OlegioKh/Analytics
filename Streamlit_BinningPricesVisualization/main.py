@@ -62,7 +62,7 @@ subgroups = data['ПідГрупа'].unique()
 selected_styles = st.sidebar.multiselect("Select Style(s)", options=styles, default=[])
 selected_subgroups = st.sidebar.multiselect("Select Subgroup(s)", options=subgroups, default=[])
 
-num_bins = st.sidebar.slider("Number of Price Bins", min_value=3, max_value=10, value=4)
+num_bins = st.sidebar.slider("Number of Price Bins", min_value=3, max_value=6, value=4)
 
 # Фільтрація даних на основі вибраних стилів і підгруп
 if selected_styles and selected_subgroups:
@@ -90,8 +90,8 @@ bins = pd.qcut(
 bin_ranges = bins.cat.categories
 new_labels = [f"{int(interval.left)}-{int(interval.right)}" for interval in bin_ranges]
 
-filtered_data = filtered_data.copy()
-filtered_data.loc[:, 'Price Segment'] = bins.cat.rename_categories(new_labels)
+filtered_data = filtered_data.copy()  # Робимо повну копію DataFrame
+filtered_data['Price Segment'] = bins.cat.rename_categories(new_labels)
 
 # Визначаємо, що використовувати на осі X
 if selected_styles and not selected_subgroups:
