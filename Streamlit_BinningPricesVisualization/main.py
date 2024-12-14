@@ -90,6 +90,7 @@ bins = pd.qcut(
 bin_ranges = bins.cat.categories
 new_labels = [f"{int(interval.left)}-{int(interval.right)}" for interval in bin_ranges]
 
+filtered_data = filtered_data.copy()
 filtered_data.loc[:, 'Price Segment'] = bins.cat.rename_categories(new_labels)
 
 # Визначаємо, що використовувати на осі X
@@ -131,7 +132,7 @@ with col1:
     st.pyplot(plt)
 
     # Pie Chart
-    pie_data = aggregated_data.groupby('Price Segment')['Дохід, грн.'].sum()
+    pie_data = aggregated_data.groupby('Price Segment', observed=False)['Дохід, грн.'].sum()
     pie_data = pie_data[pie_data > 0]
     if not pie_data.empty:
         total_sales = pie_data.sum()
@@ -167,10 +168,11 @@ with col2:
             values=['Реалізація, к-сть', 'Реалізація, грн.', 'Середня ЦР', 'Total Sales'],
             aggfunc={
                 'Реалізація, к-сть': 'sum',
-                'Реалізація, грн.': 'sum',  # Додано 'Реалізація, грн.'
+                'Реалізація, грн.': 'sum',
                 'Середня ЦР': 'mean',
                 'Total Sales': 'max'
-            }
+            },
+            observed=False  # Додано цей параметр
         ).reset_index()
 
         # Сортуємо спочатку за загальними продажами сегмента, потім за кількістю реалізації товару
