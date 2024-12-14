@@ -2,23 +2,12 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 import streamlit as st
-st.cache_data.clear()
-st.cache_resource.clear()
-
 from io import BytesIO
 
+if st.button("Оновити дані"):
+    st.cache_data.clear()
+    st.experimental_rerun()
 
-st.markdown(
-    """
-    <style>
-    .main {
-        max-width: 1200px;
-        margin: 0 auto;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
 
 url = 'https://docs.google.com/spreadsheets/d/1Ec-ynzQwLDhLiPFDz3JQVc1tN0lSvcN3/export?format=xlsx'
 
@@ -36,7 +25,8 @@ sorted_data = data.sort_values(by="Реалізація, грн.", ascending=Fal
 st.write(f"Кількість рядків у датасеті: {len(sorted_data)}")
 
 for col in ['Реалізація, к-сть', 'Реалізація, грн.', 'Дохід, грн.', 'Середня ЦР']:
-    data[col] = pd.to_numeric(data[col], errors='coerce')
+    if col in data.columns:
+        data[col] = pd.to_numeric(data[col], errors='coerce')
 
 
 def to_excel(dataframe):
@@ -48,19 +38,19 @@ def to_excel(dataframe):
 
 excel_data = to_excel(data)
 
-st.download_button(
-    label="Завантажити дані в Excel",
-    data=excel_data,
-    file_name="data.xlsx",
-    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-)
-
 st.sidebar.header("Filters")
 styles = data['Стиль'].unique()
 subgroups = data['ПідГрупа'].unique()
 
-selected_styles = st.sidebar.multiselect("Select Style(s)", options=styles, default=[])
-selected_subgroups = st.sidebar.multiselect("Select Subgroup(s)", options=subgroups, default=[])
+if len(styles) > 0:  # Перевірка, чи є доступні стилі
+    selected_styles = st.sidebar.multiselect("Select Style(s)", options=styles, default=[])
+else:
+    st.sidebar.write("Немає доступних стилів для вибору.")
+
+if len(subgroups) > 0:  # Перевірка, чи є доступні підгрупи
+    selected_subgroups = st.sidebar.multiselect("Select Subgroup(s)", options=subgroups, default=[])
+else:
+    st.sidebar.write("Немає доступних підгруп для вибору.")
 
 num_bins = st.sidebar.slider("Number of Price Bins", min_value=3, max_value=6, value=4)
 
@@ -76,8 +66,6 @@ elif selected_subgroups:
 else:
     filtered_data = data
 
-for col in ['Реалізація, к-сть', 'Реалізація, грн.', 'Дохід, грн.', 'Середня ЦР']:
-    filtered_data[col] = pd.to_numeric(filtered_data[col], errors='coerce')
 
 filtered_data = filtered_data.dropna(subset=['Реалізація, к-сть', 'Реалізація, грн.', 'Дохід, грн.', 'Середня ЦР'])
 
@@ -90,7 +78,7 @@ bins = pd.qcut(
 bin_ranges = bins.cat.categories
 new_labels = [f"{int(interval.left)}-{int(interval.right)}" for interval in bin_ranges]
 
-filtered_data = filtered_data.copy()  # Робимо повну копію DataFrame
+#filtered_data = filtered_data.copy()  # Робимо повну копію DataFrame
 filtered_data['Price Segment'] = bins.cat.rename_categories(new_labels)
 
 # Визначаємо, що використовувати на осі X
