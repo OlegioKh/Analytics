@@ -2,6 +2,9 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 import streamlit as st
+st.cache_data.clear()
+st.cache_resource.clear()
+
 from io import BytesIO
 
 
@@ -86,7 +89,8 @@ bins = pd.qcut(
 
 bin_ranges = bins.cat.categories
 new_labels = [f"{int(interval.left)}-{int(interval.right)}" for interval in bin_ranges]
-filtered_data['Price Segment'] = bins.cat.rename_categories(new_labels)
+
+filtered_data.loc[:, 'Price Segment'] = bins.cat.rename_categories(new_labels)
 
 # Визначаємо, що використовувати на осі X
 if selected_styles and not selected_subgroups:
@@ -96,7 +100,7 @@ elif selected_subgroups and not selected_styles:
 else:
     group_by_column = 'Стиль'  # За замовчуванням використовуємо стиль
 
-aggregated_data = filtered_data.groupby([group_by_column, 'Price Segment']).agg({
+aggregated_data = filtered_data.groupby([group_by_column, 'Price Segment'], observed=False).agg({
     'Реалізація, к-сть': 'sum',
     'Реалізація, грн.': 'sum',
     'Дохід, грн.': 'sum'
@@ -151,7 +155,7 @@ with col1:
 with col2:
     if all(col in filtered_data.columns for col in ['Артикул - назва', 'Реалізація, к-сть', 'Середня ЦР', 'Price Segment', 'Постачальник']):
         # Обчислюємо загальні продажі для кожного цінового сегмента
-        segment_totals = filtered_data.groupby('Price Segment')['Реалізація, к-сть'].sum().reset_index()
+        segment_totals = filtered_data.groupby('Price Segment', observed=False)['Реалізація, к-сть'].sum().reset_index()
         segment_totals = segment_totals.rename(columns={'Реалізація, к-сть': 'Total Sales'})
 
         # Додаємо загальні продажі сегмента до основних даних
