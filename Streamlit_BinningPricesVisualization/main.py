@@ -172,7 +172,7 @@ with col2:
 
         # Відображення таблиці
         st.dataframe(
-            grouped_data.style
+            grouped_data.head(100).style
             .format({
                 'Реалізація ЦР': "{:,.0f}",
                 'Реалізація кіл-сть': "{:,.0f}",
@@ -193,4 +193,11 @@ with col2:
 
     else:
         st.error("Відсутні необхідні колонки для побудови таблиці.")
+
+print(f"Streamlit version: {streamlit.__version__}")
+print(f"Pandas version: {pandas.__version__}")
+print(f"Matplotlib version: {matplotlib.__version__}")
+print(f"Seaborn version: {seaborn.__version__}")
+print(f"Openpyxl version: {openpyxl.__version__}")
+print(f"Xlsxwriter version: {xlsxwriter.__version__}")
 
